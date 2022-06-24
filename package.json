@@ -1,0 +1,8 @@
+{
+  "name": "combinator",
+  "author": "Mathis Bullinger",
+  "devDependencies": {
+    "prettier": "^2.7.1",
+    "ts-node": "^10.8.1"
+  }
+}
