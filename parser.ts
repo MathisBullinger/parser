@@ -1,62 +1,149 @@
-import { printResult } from './util/print'
-import {
-  some,
-  or,
-  chain,
-  createParser,
-  joinChildren,
-  infix,
-} from './util/combinator'
+import processTree from './treeProcessor'
 
-export type Parser<T = Record<never, never>> = ((input: string) => Result) & T
+export type Tree = { type: TokenType; data?: string; children: Tree[] }
+export type TokenType =
+  | 'group'
+  | 'sequence'
+  | 'empty'
+  | 'unary-minus'
+  | 'decimal-dot'
+  | 'int'
+  | 'float'
+  | 'add'
+  | 'subtract'
+  | 'multiply'
+  | 'divide'
+  | 'group-start'
+  | 'group-end'
 
-export type Result = Success | Failure
-export type Success = { ok: true; result: Tree; text: string }
-export type Failure = { ok: false }
+type Parser = (text: string) => Result
 
-export type Tree = { type: string; value: string; children: Tree[] }
+type Result = Success | Failure
+type Failure = { ok: false }
+type Success = { ok: true; result: Tree; text: string }
 
-const integer = some(createParser('integer', /[0-9]/))
+const some =
+  (parser: Parser): Parser =>
+  (text) => {
+    const results = [parser(text)]
 
-const natural = or(
-  integer,
-  chain('natural', createParser('minus', '-'), integer).process(joinChildren)
+    while (results.at(-1)!.ok) {
+      results.push(parser((results.at(-1) as Success).text))
+    }
+
+    results.pop()
+    if (results.length === 0) return { ok: false }
+
+    return {
+      ok: true,
+      text: (results.at(-1) as Success).text,
+      result: {
+        type: 'group',
+        children: results.map((v) => (v as Success).result),
+      },
+    }
+  }
+
+const any =
+  (parser: Parser): Parser =>
+  (text) => {
+    const results: Success[] = []
+    while (true) {
+      const result = parser(results.at(-1)?.text ?? text)
+      if (!result.ok)
+        return {
+          ok: true,
+          text: results.at(-1)?.text ?? text,
+          result: { type: 'group', children: results.map((v) => v.result) },
+        }
+      results.push(result)
+    }
+  }
+
+const or =
+  (...parsers: Parser[]): Parser =>
+  (text) => {
+    for (const parser of parsers) {
+      const result = parser(text)
+      if (result.ok) return result
+    }
+    return { ok: false }
+  }
+
+const sequence =
+  (...parsers: Parser[]): Parser =>
+  (text) => {
+    const results: Success[] = []
+    for (const parser of parsers) {
+      const result = parser(results.at(-1)?.text ?? text)
+      if (!result.ok) return { ok: false }
+      results.push(result)
+    }
+    return {
+      ok: true,
+      text: results.at(-1)!.text,
+      result: { type: 'sequence', children: results.map((v) => v.result) },
+    }
+  }
+
+const charParser =
+  (match: string | RegExp) =>
+  (type: TokenType): Parser =>
+  (text) =>
+    (typeof match === 'string' ? match === text[0] : match.test(text[0]))
+      ? {
+          ok: true,
+          result: { type, data: text[0], children: [] },
+          text: text.slice(1),
+        }
+      : { ok: false }
+
+const digit = charParser(/[0-9]/)
+const plus = charParser('+')
+const minus = charParser('-')
+const times = charParser('*')
+const divide = charParser('/')
+const dot = charParser('.')
+const leftParen = charParser('(')
+const rightParen = charParser(')')
+
+const integer = some(digit('int'))
+const natural = or(sequence(minus('unary-minus'), integer), integer)
+const rational = or(sequence(natural, dot('decimal-dot'), integer), natural)
+
+// term ::= factor ([*/] factor)*
+const term = sequence(
+  factor,
+  any(sequence(or(times('multiply'), divide('divide')), factor))
 )
 
-const rational = or(
-  chain('rational', natural, createParser('dot', '.'), integer).process(
-    joinChildren
-  ),
-  natural
+// expr ::= term ([+-] term)*
+const expr = sequence(
+  term,
+  any(sequence(or(plus('add'), minus('subtract')), term))
 )
-
-// grammar
-
-// expr ::= term + expr | term
-function expr(input: string): Result {
-  return or(
-    chain('', term, createParser('plus', '+'), expr).process(infix),
-    term
-  )(input)
-}
-
-// term ::= factor * term | factor
-function term(input: string): Result {
-  return or(
-    chain('', factor, createParser('times', '*'), term).process(infix),
-    factor
-  )(input)
-}
 
 // factor ::= (expr) | rational
-function factor(input: string): Result {
+function factor(text: string): Result {
   return or(
-    chain('', createParser('', '('), expr, createParser('', ')')).process(
-      ({ children: [, expr] }) => expr
-    ),
+    sequence(leftParen('group-start'), expr, rightParen('group-end')),
     rational
-  )(input)
+  )(text)
 }
 
-printResult(expr('2+3*4'))
-printResult(expr('(2+3)*4'))
+const raw = expr('1+2/(3-4)*5')
+printTree(raw)
+if (raw.ok) printTree(processTree(raw.result))
+
+function printTree(result: Result | Tree) {
+  if (!(result as any).ok && !(result as any).children) return
+
+  const print = (node: Tree, indent = 0) => {
+    console.log(
+      ' '.repeat(indent) + `(${node.type ?? 'none'}) ${node.data ?? ''}`
+    )
+    node.children.forEach((v) => print(v, indent + 2))
+  }
+
+  print((result as any).result ?? result)
+}
