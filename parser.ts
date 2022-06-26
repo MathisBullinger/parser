@@ -1,4 +1,5 @@
 import processTree from './treeProcessor'
+import { evaluate } from './evaluator'
 
 export type Tree = { type: TokenType; data?: string; children: Tree[] }
 export type TokenType =
@@ -133,7 +134,11 @@ function factor(text: string): Result {
 
 const raw = expr('1+2/(3-4)*5')
 printTree(raw)
-if (raw.ok) printTree(processTree(raw.result))
+if (raw.ok) {
+  const ast = processTree(raw.result)
+  printTree(ast)
+  console.log(evaluate(ast))
+}
 
 function printTree(result: Result | Tree) {
   if (!(result as any).ok && !(result as any).children) return
