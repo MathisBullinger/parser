@@ -1,0 +1,58 @@
+:root {
+  background-color: #333;
+  color: #fff;
+  font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console,
+    monospace;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+.workbench {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+}
+
+.workbench > * {
+  height: 100%;
+}
+
+.input {
+  flex: 3 1 0;
+  padding: 3rem 0 0 3rem;
+}
+
+.output {
+  flex: 1 1 0;
+}
+
+.divider {
+  position: relative;
+  width: 1px;
+  background-color: #888;
+  opacity: 0.15;
+  transition: opacity 0.15s ease;
+  cursor: ew-resize;
+}
+
+.divider:hover {
+  opacity: 1;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  width: 21px;
+  height: 100%;
+}
