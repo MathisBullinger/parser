@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "module": "es6",
+    "module": "esnext",
     "moduleResolution": "node",
     "target": "es6",
+    "lib": ["ESnext", "WebWorker", "DOM"],
     "typeRoots": ["app"]
   },
-  "include": ["./src/**/*"]
+  "include": ["./app/**/*", "./src/**/*"]
 }

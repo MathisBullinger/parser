@@ -1,8 +1,8 @@
 :host {
-  background: #f002;
   width: 100%;
   height: 100%;
   display: block;
+  position: relative;
 }
 
 textarea {
@@ -10,12 +10,35 @@ textarea {
   padding: 0;
   background: none;
   border: none;
-  color: inherit;
-  font: inherit;
-  width: 100%;
-  line-height: 40px;
+  color: transparent;
+  caret-color: #fff;
 }
 
 textarea:focus {
   outline: none;
+}
+
+textarea,
+.input-mirror {
+  font: inherit;
+  width: 100%;
+  line-height: 40px;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.input-mirror {
+  height: 100%;
+  pointer-events: none;
+  margin: 0;
+}
+
+.input-mirror > * {
+  margin: 0;
+  display: block;
+}
+
+.input-mirror > *::before {
+  content: '\200b';
 }

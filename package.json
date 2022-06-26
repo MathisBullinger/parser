@@ -6,6 +6,7 @@
     "build": "parcel build app/index.html"
   },
   "devDependencies": {
+    "@parcel/optimizer-data-url": "^2.6.2",
     "@parcel/transformer-inline-string": "^2.6.2",
     "parcel": "^2.6.2",
     "prettier": "^2.7.1",

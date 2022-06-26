@@ -132,12 +132,11 @@ function factor(text: string): Result {
   )(text)
 }
 
-const raw = expr('1+2/(3-4)*5')
-printTree(raw)
-if (raw.ok) {
-  const ast = processTree(raw.result)
-  printTree(ast)
-  console.log(evaluate(ast))
+export default (input: string) => {
+  const result = expr(input)
+  if (!result.ok) return null
+  const ast = processTree(result.result)
+  return evaluate(ast)
 }
 
 function printTree(result: Result | Tree) {
